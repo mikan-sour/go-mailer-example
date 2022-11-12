@@ -1,0 +1,85 @@
+{{define "body"}}
+    <!doctype html>
+    <html lang="en">
+
+    <head>
+        <meta name="viewport" content="width=device-width"/>
+        <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+        <title></title>
+        <style>
+            @import url('https://fonts.googleapis.com/css2?family=Open+Sans:ital,wght@0,300;0,400;1,300&display=swap');
+            html {
+                font-family: "Open Sans", sans-serif;
+                background-color:#DDD;
+                margin:0;padding:0;
+                box-sizing:border-box;
+            }
+
+            header {
+                width:100%;
+                height: 6rem;
+                display: flex;flex-direction: row;align-items:center;justify-content:center;
+                position:relative;
+                background-color:crimson;
+            }
+
+            header > h1 {
+                color: #FFF;
+                size:2rem;
+                position: absolute; left: 20px;
+            }
+
+            button {
+                color: #FFF;
+                font-size:1rem;
+                width: 12rem; height:3.5rem;
+                border-radius:5px;
+                border: none;
+                box-shadow: rgba(149, 157, 165, 0.2) 0px 8px 24px;
+                background-color:crimson;
+            }
+            
+        </style>
+    </head>
+
+    <body>
+
+    <header>
+        <h1>My Logo</h1>
+    </header>
+
+    <p>{{.ErrorMessage}}</p>
+    <button id="open-in-admin">Open in Admin Panel</button>
+
+    </body>
+    <script>
+        'use strict';
+
+        function handleClick(){
+            console.log(URL)
+            window.open(URL, '_blank');
+        };
+
+        document.getElementById("open-in-admin").addEventListener('click', handleClick, false);
+        
+        const URL = {{.Url}};
+    </script>
+    </html>
+{{end}}
+
+{{define "js"}}
+
+    <script>
+        'use strict';
+
+        function handleClick(){
+            console.log(URL)
+            window.open(URL, '_blank');
+        };
+
+        document.getElementById("open-in-admin").addEventListener('click', handleClick, false);
+        
+        const URL = {{.Url}};
+    </script>
+
+{{end}}
