@@ -23,7 +23,8 @@ type AppImpl struct {
 	InfoLog  *log.Logger
 	ErrorLog *log.Logger
 
-	MailService *service.MailServiceImpl
+	KafkaListenerService *service.KafkaListenerImpl
+	MailService          *service.MailServiceImpl
 }
 
 func New(config *config.Config) *AppImpl {
@@ -39,6 +40,8 @@ func New(config *config.Config) *AppImpl {
 }
 
 func (app *AppImpl) InitService() {
+	app.KafkaListenerService = service.NewKafkaListenerService([]string{
+		fmt.Sprintf("%s:%s", app.Config.KAFKA_HOST, app.Config.KAFKA_PORT)})
 	app.MailService = service.NewMailService(app.Config, app.Wait)
 	app.InfoLog.Println("app mail service initialized")
 }
@@ -63,6 +66,9 @@ func (app *AppImpl) ListenForMail() {
 
 func (app *AppImpl) StartApp(config *config.Config) {
 
+	// consumer setup
+	go app.RunKafkaListener(app.Config)
+
 	router := gin.Default()
 	router.GET("/healthcheck", app.HealthcheckHandler)
 	router.POST("/send", app.SendMailHandler)
@@ -79,17 +85,17 @@ func (app *AppImpl) StartApp(config *config.Config) {
 		<-quit
 		log.Println("receive interrupt signal")
 		if err := server.Close(); err != nil {
-			log.Fatal("Server Close:", err)
+			app.ErrorLog.Fatal("Server Close:", err)
 		}
 	}()
 
 	if err := server.ListenAndServe(); err != nil {
 		if err == http.ErrServerClosed {
-			log.Println("Server closed under request")
+			app.ErrorLog.Println("Server closed under request")
 		} else {
-			log.Fatal("Server closed unexpect")
+			app.ErrorLog.Fatal("Server closed unexpect")
 		}
 	}
 
-	log.Println("Server exiting")
+	app.InfoLog.Println("Server exiting")
 }

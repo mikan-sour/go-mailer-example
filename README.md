@@ -1,6 +1,7 @@
 # A mailer app in go
+Sends mails based on request or by receiving a message via Kafka
 
-## Setup
+## Setup for email
 1. Ensure .env exists
 > make env
 
@@ -20,4 +21,23 @@ curl -X POST -H "Content-Type: application/json" \
 or run:
 > make send
 
+## Setup for Kafka
+1. Run the kafka & zookeeper containers
+> make kafka
+2. Run the app
+> make run
+3. SH into the kafka container
+> make produce_mode
 
+## Cleanup
+Run clean
+> make clean
+
+Sometimes you need to remove the network manually
+>  docker network rm kafka-network
+
+Also make sure the volumes or mounted directories are removed like `kafka_data`
+> rm -rf kafka_data
+
+## Resources
+- [Kafka from the CLI](https://medium.com/@TimvanBaarsen/apache-kafka-cli-commands-cheat-sheet-a6f06eac01b#e260)
