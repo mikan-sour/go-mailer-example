@@ -1,6 +1,7 @@
 package app
 
 import (
+	"database/sql"
 	"fmt"
 	"log"
 	"os"
@@ -29,6 +30,7 @@ type App interface {
 
 type AppImpl struct {
 	Config *config.Config
+	DB     *sql.DB
 
 	Wait     *sync.WaitGroup
 	InfoLog  *log.Logger
@@ -36,6 +38,7 @@ type AppImpl struct {
 
 	KafkaListenerService *service.KafkaListenerImpl
 	MailService          *service.MailServiceImpl
+	ProfanityService     *service.ProfanityDetectionServiceImpl
 }
 
 func New(config *config.Config) *AppImpl {
@@ -51,10 +54,17 @@ func New(config *config.Config) *AppImpl {
 }
 
 func (app *AppImpl) InitService() {
+
+	profService, err := service.NewProfanityDetectionService(app.DB)
+	if err != nil {
+		app.ErrorLog.Fatalf("error creating a new ProfanityDetectionService: %s", err.Error())
+	}
+
 	app.KafkaListenerService = service.NewKafkaListenerService([]string{
 		fmt.Sprintf("%s:%s", app.Config.KAFKA_HOST, app.Config.KAFKA_PORT)})
 	app.MailService = service.NewMailService(app.Config, app.Wait)
-	app.InfoLog.Println("app mail service initialized")
+	app.ProfanityService = profService
+	app.InfoLog.Println("app services initialized")
 }
 
 func (app *AppImpl) SendEmail(msg service.Message) {

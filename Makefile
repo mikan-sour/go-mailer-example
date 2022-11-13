@@ -1,8 +1,11 @@
 current_dir = $(shell pwd)
 main_path = ./src/main.go
+
 kafka_network = kafka-network 
 kafka_host_port = localhost:9092
 kafka_topic = errors
+
+
 
 # Add coloration
 ifneq (,$(findstring xterm,${TERM}))
@@ -58,18 +61,22 @@ kafka:
 mailhog:
 	@echo "${GREEN}Setup mailhog...${RESET}"
 	docker run -d -e "MH_STORAGE=maildir" \
+	--network $(kafka_network) \
 	-v $(current_dir)/maildir:/maildir \
 	-p 1025:1025 -p 8025:8025 --name mailhog mailhog/mailhog
 	@echo "${GREEN}Mailhog setup!${RESET}"
 
 clean:
 	@echo "${RED}Cleaning...${RESET}"
-	docker rm -v --force $(shell docker ps -a -q -f name=mailhog)
+	@go clean
+	@docker rm -v --force postgres
+	rm -rf data/pgdata
+	@docker rm -v --force mailhog
 	rm -rf maildir
-	docker rm -v --force $(shell docker ps -a -q -f name=kafka)
+	@docker rm -v --force kafka
 	rm -rf kafka_data
-	docker rm -v --force $(shell docker ps -a -q -f name=zookeeper)
-	docker network rm $(kafka_network) 
+	@docker rm -v --force zookeeper
+	@docker network rm $(kafka_network) 
 	@echo "${RED}All clean!${RESET}"
 
 run:
@@ -91,5 +98,32 @@ kafka_sh:
 	@printf "SAMPLE MSG PAYLOAD: \n ${RED}{\"from\": \"jed@mail.com\", \"fromName\":\"jed\",\"to\":\"molly@molly.com\",\"subject\":\"a simple hello\", \"messageBody\":{\"errorMessage\":\"hi!\",\"url\":\"www.com\"}} ${RESET}\n\n" \
 
 	@printf "${LIGHTPURPLE}Running producer mode...${RESET}\n"
-	docker exec -it kafka bash
+	@docker exec -it kafka bash
 	unset JXM_PORT
+
+postgres:
+	@echo "${LIGHTPURPLE}Running postgres...${RESET}"
+	@docker run -d \
+	--name postgres \
+	--network $(kafka_network) \
+	-p 5433:5432 \
+	-e POSTGRES_USER=postgres \
+	-e POSTGRES_PASSWORD=password \
+	-e POSTGRES_DB=badwords \
+	-e PGDATA=/var/lib/postgresql/data/pgdata \
+	-v $(current_dir)/data:/var/lib/postgresql/data \
+	-v $(current_dir)/scripts/db-init.sh:/docker-entrypoint-initdb.d/init.sh \
+	-v $(current_dir)/data/bad-words-en.csv:/var/lib/postgresql/data/bad-words-en.csv \
+	postgres
+
+	@echo "${LIGHTPURPLE}Postgres is up!${RESET}"
+
+
+up:
+	@echo "${YELLOW}Setup everything...${RESET}"
+	@make kafka
+	@make postgres
+	@make mailhog
+	sleep 10
+	@echo "${YELLOW}Everything is up! run below command to start the app:${RESET}"
+	@printf "\n   ${BLUE}go run ${main_path}${RESET}\n\n" \

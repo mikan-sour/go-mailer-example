@@ -1,3 +1,4 @@
 .env
 maildir
 kafka_data
+data/pgdata

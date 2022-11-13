@@ -12,6 +12,9 @@ func main() {
 	}
 
 	application := app.New(config)
+
+	application.InitializeDB()
+
 	application.InitService()
 
 	go application.ListenForMail()

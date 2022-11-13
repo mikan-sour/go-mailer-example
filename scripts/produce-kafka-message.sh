@@ -1,6 +1,6 @@
 #!/bin/bash
-
 export $(grep -v '^#' .env | xargs)
+
 KAFKA_DOMAIN=$KAFKA_HOST:$KAFKA_PORT
 
 # Create topic
