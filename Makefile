@@ -90,8 +90,6 @@ kafka_sh:
 
 	@printf "SAMPLE MSG PAYLOAD: \n ${RED}{\"from\": \"jed@mail.com\", \"fromName\":\"jed\",\"to\":\"molly@molly.com\",\"subject\":\"a simple hello\", \"messageBody\":{\"errorMessage\":\"hi!\",\"url\":\"www.com\"}} ${RESET}\n\n" \
 
-
 	@printf "${LIGHTPURPLE}Running producer mode...${RESET}\n"
 	docker exec -it kafka bash
 	unset JXM_PORT
-	cd sh /opt/bitnami/kafka/bin

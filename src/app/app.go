@@ -3,17 +3,28 @@ package app
 import (
 	"fmt"
 	"log"
-	"net/http"
 	"os"
-	"os/signal"
 	"sync"
 
-	"github.com/gin-gonic/gin"
 	"github.com/jedzeins/go-mailer/src/config"
 	"github.com/jedzeins/go-mailer/src/service"
+
+	"github.com/gin-gonic/gin"
 )
 
 type App interface {
+	InitService()
+	SendEmail(msg service.Message)
+
+	// handlers
+	SendMailHandler(c *gin.Context)
+	HealthcheckHandler(c *gin.Context)
+
+	// listen
+	ListenForMail()
+	RunKafkaListener(config *config.Config)
+
+	StartApp(config *config.Config)
 }
 
 type AppImpl struct {
@@ -66,36 +77,11 @@ func (app *AppImpl) ListenForMail() {
 
 func (app *AppImpl) StartApp(config *config.Config) {
 
-	// consumer setup
+	// kafka setup
 	go app.RunKafkaListener(app.Config)
 
-	router := gin.Default()
-	router.GET("/healthcheck", app.HealthcheckHandler)
-	router.POST("/send", app.SendMailHandler)
-
-	server := &http.Server{
-		Addr:    fmt.Sprintf(":%s", config.API_PORT),
-		Handler: router,
-	}
-
-	quit := make(chan os.Signal)
-	signal.Notify(quit, os.Interrupt)
-
-	go func() {
-		<-quit
-		log.Println("receive interrupt signal")
-		if err := server.Close(); err != nil {
-			app.ErrorLog.Fatal("Server Close:", err)
-		}
-	}()
-
-	if err := server.ListenAndServe(); err != nil {
-		if err == http.ErrServerClosed {
-			app.ErrorLog.Println("Server closed under request")
-		} else {
-			app.ErrorLog.Fatal("Server closed unexpect")
-		}
-	}
+	// server setup
+	app.RunServer()
 
 	app.InfoLog.Println("Server exiting")
 }
